@@ -1,18 +1,40 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
+const STORAGE_KEY = 'gufeng_novels'
+
 const novels = ref([])
 const selectedNovel = ref(null)
 const isPublishing = ref(false)
 
-// 取得小說列表
-const fetchNovels = async () => {
+// 從 localStorage 取得或初始化小說列表
+const fetchNovels = () => {
   try {
-    const res = await fetch('/api/novels')
-    novels.value = await res.json()
+    const data = localStorage.getItem(STORAGE_KEY)
+    if (data) {
+      novels.value = JSON.parse(data)
+    } else {
+      novels.value = [
+        {
+          id: Date.now().toString(),
+          title: '初遇',
+          author: '佚名',
+          tags: ['隨筆', '舊夢'],
+          summary: '這是一段塵封的記憶...',
+          content: '落花人獨立，微雨燕雙飛。\n\n當時明月在，曾照彩雲歸。',
+          coverUrl: 'https://picsum.photos/seed/1/800/600?grayscale'
+        }
+      ]
+      saveToStorage()
+    }
   } catch (error) {
     console.error("無法取得小說資料：", error)
+    novels.value = []
   }
+}
+
+const saveToStorage = () => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(novels.value))
 }
 
 onMounted(() => {
@@ -48,19 +70,15 @@ const editNovel = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-const deleteNovel = async () => {
+const deleteNovel = () => {
   if (!selectedNovel.value) return
   if (!confirm(`確定要將《${selectedNovel.value.title}》付之一炬（刪除）嗎？此操作將無法復原。`)) return
   
   try {
-    const res = await fetch(`/api/novels?id=${selectedNovel.value.id}`, { method: 'DELETE' })
-    if (res.ok) {
-      await fetchNovels()
-      alert('已燒毀該卷宗。')
-      goBack()
-    } else {
-      alert('刪除失敗，請檢查伺服器連線。')
-    }
+    novels.value = novels.value.filter(n => n.id !== selectedNovel.value.id)
+    saveToStorage()
+    alert('已燒毀該卷宗。')
+    goBack()
   } catch (error) {
     console.error(error)
     alert('操作失敗...')
@@ -79,51 +97,54 @@ const form = ref({
 })
 const isSubmitting = ref(false)
 
-const submitNovel = async () => {
+const submitNovel = () => {
   if (!form.value.title || !form.value.content) {
     alert('請至少填寫書名與正文！')
     return
   }
   isSubmitting.value = true
-  try {
-    const payload = {
-      ...(form.value.id ? { id: form.value.id } : {}),
-      title: form.value.title,
-      author: form.value.author || '佚名',
-      tags: form.value.tags ? form.value.tags.split(/[,、，]/).map(t => t.trim()).filter(Boolean) : ['新作'],
-      summary: form.value.summary || '暫無簡介',
-      content: form.value.content,
-      coverUrl: form.value.coverUrl || `https://picsum.photos/seed/${Date.now()}/800/600?grayscale`
-    }
-    
-    const res = await fetch('/api/novels', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    
-    if (res.ok) {
-      const { novel } = await res.json()
-      await fetchNovels()
-      form.value = { id: null, title: '', author: '', tags: '', summary: '', content: '', coverUrl: '' }
-      isPublishing.value = false
-      alert(payload.id ? '修改成功！' : '發布成功！')
-      
-      // 如果是在修改模式，更新 selectedNovel 並切換回閱讀視圖
-      if (payload.id) {
-        selectedNovel.value = novel
+  
+  // 模擬網路延遲
+  setTimeout(() => {
+    try {
+      const isEdit = !!form.value.id
+      let tagsArray = ['新作']
+      if (form.value.tags) {
+        tagsArray = form.value.tags.split(/[,、，]/).map(t => t.trim()).filter(Boolean)
+      }
+
+      const payload = {
+        id: isEdit ? form.value.id : Date.now().toString(),
+        title: form.value.title,
+        author: form.value.author || '佚名',
+        tags: tagsArray,
+        summary: form.value.summary || '暫無簡介',
+        content: form.value.content,
+        coverUrl: form.value.coverUrl || `https://picsum.photos/seed/${Date.now()}/800/600?grayscale`
       }
       
+      if (isEdit) {
+        const index = novels.value.findIndex(n => n.id === payload.id)
+        if (index !== -1) novels.value[index] = payload
+        selectedNovel.value = payload
+      } else {
+        novels.value.unshift(payload)
+      }
+      
+      saveToStorage()
+      
+      form.value = { id: null, title: '', author: '', tags: '', summary: '', content: '', coverUrl: '' }
+      isPublishing.value = false
+      alert(isEdit ? '修改成功！' : '發布成功！')
+      
       window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else {
-      alert('儲存失敗，請檢查伺服器連線。')
+    } catch (e) {
+      console.error(e)
+      alert('發布失敗...')
+    } finally {
+      isSubmitting.value = false
     }
-  } catch (e) {
-    console.error(e)
-    alert('發布失敗...')
-  } finally {
-    isSubmitting.value = false
-  }
+  }, 300)
 }
 </script>
 
