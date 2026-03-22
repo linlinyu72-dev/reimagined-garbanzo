@@ -1,11 +1,50 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const STORAGE_KEY = 'gufeng_novels'
 
 const novels = ref([])
 const selectedNovel = ref(null)
 const isPublishing = ref(false)
+
+// 電子書分頁邏輯
+const currentPage = ref(0)
+const charsPerPage = 500 // 每頁字數
+
+const pages = computed(() => {
+  if (!selectedNovel.value) return []
+  const text = selectedNovel.value.content
+  const result = []
+  let currentChunk = ""
+  const paragraphs = text.split('\n')
+  
+  for (const p of paragraphs) {
+    if ((currentChunk.length + p.length) > charsPerPage && currentChunk.length > 0) {
+      result.push(currentChunk)
+      currentChunk = p + '\n'
+    } else {
+      currentChunk += p + '\n'
+    }
+  }
+  if (currentChunk.trim().length > 0) {
+    result.push(currentChunk)
+  }
+  return result.length > 0 ? result : [""]
+})
+
+const nextPage = () => {
+  if (currentPage.value < pages.value.length - 1) {
+    currentPage.value++
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 0) {
+    currentPage.value--
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
 
 // 從 localStorage 取得或初始化小說列表
 const fetchNovels = () => {
@@ -44,12 +83,14 @@ onMounted(() => {
 const selectNovel = (novel) => {
   selectedNovel.value = novel
   isPublishing.value = false
+  currentPage.value = 0
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const goBack = () => {
   selectedNovel.value = null
   isPublishing.value = false
+  currentPage.value = 0
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -325,13 +366,13 @@ const submitNovel = () => {
           </div>
 
           <!-- 書頁本體 -->
-          <article class="bg-[#fdfaf2] px-8 py-16 sm:px-16 sm:py-24 border-[3px] border-double border-[#d3ccbc] shadow-[15px_15px_30px_rgba(200,195,185,0.4)] relative">
+          <article class="bg-[#fdfaf2] px-8 py-12 sm:px-16 sm:py-20 border-[3px] border-double border-[#d3ccbc] shadow-[15px_15px_30px_rgba(200,195,185,0.4)] relative min-h-[75vh] flex flex-col">
              
             <!-- 書頁裝飾紋路 -->
             <div class="absolute left-4 top-4 bottom-4 w-[2px] bg-gradient-to-b from-transparent via-[#912d26]/20 to-transparent"></div>
             <div class="absolute right-4 top-4 bottom-4 w-[2px] bg-gradient-to-b from-transparent via-[#912d26]/20 to-transparent"></div>
 
-            <header class="mb-20 text-center border-b-[2px] border-[#912d26]/20 pb-16 relative">
+            <header v-if="currentPage === 0" class="mb-16 text-center border-b-[2px] border-[#912d26]/20 pb-12 relative animate-fade-in-down">
               <div class="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-12 h-[2px] bg-[#912d26]"></div>
               
               <div class="flex justify-center gap-4 mb-10 text-[#7a241d] tracking-widest text-sm">
@@ -350,20 +391,36 @@ const submitNovel = () => {
               </div>
             </header>
 
-            <div class="prose prose-lg sm:prose-xl max-w-none text-justify content-area">
-              <p v-for="(paragraph, index) in selectedNovel.content.split('\n\n')" :key="index" class="text-[#3a3732] leading-[2.5] tracking-wide mb-10 text-lg sm:text-xl">
-                 <span v-if="index === 0" class="float-left text-6xl text-[#912d26] font-bold mr-4 mt-2 pr-2 border-r border-[#912d26]/30">
+            <div class="prose prose-lg sm:prose-xl max-w-none text-justify content-area flex-1">
+              <p v-for="(paragraph, index) in pages[currentPage].split('\n')" :key="index" v-show="paragraph.trim()" class="text-[#3a3732] leading-[2.5] tracking-wide mb-8 text-lg sm:text-xl">
+                 <span v-if="index === 0 && currentPage === 0" class="float-left text-6xl text-[#912d26] font-bold mr-4 mt-2 pr-2 border-r border-[#912d26]/30">
                    {{ paragraph.charAt(0) }}
                  </span>
-                 <span v-if="index === 0">{{ paragraph.slice(1) }}</span>
+                 <span v-if="index === 0 && currentPage === 0">{{ paragraph.slice(1) }}</span>
                  <span v-else>{{ paragraph }}</span>
               </p>
             </div>
 
-            <div class="mt-24 pt-10 border-t border-dashed border-[#d3ccbc] flex flex-col sm:flex-row items-center justify-between gap-6">
-              <span class="text-[#7e786d] text-sm tracking-widest">（ 卷首 ）</span>
-              <button class="px-10 py-3 bg-transparent border border-[#912d26] text-[#912d26] hover:bg-[#912d26] hover:text-[#f4f1e1] transition-colors duration-300 tracking-[0.3em] font-medium">
-                翻閱下頁
+            <!-- 電子書翻頁控制列 -->
+            <div class="mt-16 pt-10 border-t border-dashed border-[#d3ccbc] flex flex-col sm:flex-row items-center justify-between gap-6">
+              <button 
+                @click="prevPage" 
+                :disabled="currentPage === 0"
+                class="px-8 py-3 w-full sm:w-auto bg-transparent border border-[#912d26] text-[#912d26] hover:bg-[#912d26] hover:text-[#f4f1e1] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[#912d26] transition-colors tracking-[0.3em] font-medium disabled:cursor-not-allowed"
+              >
+                ⟵ 上一頁
+              </button>
+              
+              <span class="text-[#7e786d] text-sm tracking-widest font-bold">
+                第 {{ currentPage + 1 }} 頁 / 共 {{ pages.length }} 頁
+              </span>
+
+              <button 
+                @click="nextPage" 
+                :disabled="currentPage === pages.length - 1"
+                class="px-8 py-3 w-full sm:w-auto bg-transparent border border-[#912d26] text-[#912d26] hover:bg-[#912d26] hover:text-[#f4f1e1] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[#912d26] transition-colors tracking-[0.3em] font-medium disabled:cursor-not-allowed"
+              >
+                下一頁 ⟶
               </button>
             </div>
           </article>
@@ -413,5 +470,19 @@ const submitNovel = () => {
 main, header {
   position: relative;
   z-index: 10;
+}
+
+@keyframes fade-in-down {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-down {
+  animation: fade-in-down 0.8s ease-out forwards;
 }
 </style>
