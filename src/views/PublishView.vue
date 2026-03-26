@@ -125,6 +125,11 @@ const submitNovel = () => {
           <textarea v-model="form.summary" rows="5" class="w-full bg-[#ece6d5] border border-[#d3ccbc] focus:border-[#912d26] outline-none px-4 py-3 text-[#2c2b29] tracking-wide leading-relaxed resize-none placeholder-[#a39d8f]" placeholder="故事大綱..."></textarea>
         </div>
 
+        <div class="space-y-2">
+          <label class="block text-sm font-bold text-[#7a241d] tracking-widest">自訂封面圖片網址 <span class="text-xs font-normal text-[#645e55]">(選填，若留空則由系統隨機繪製)</span></label>
+          <input v-model="form.coverUrl" type="url" class="w-full bg-[#ece6d5] border border-[#d3ccbc] focus:border-[#912d26] outline-none px-4 py-3 text-[#2c2b29] tracking-wide placeholder-[#a39d8f]" placeholder="https://..." />
+        </div>
+
         <div class="pt-8 border-t border-dashed border-[#d3ccbc] text-center">
           <button type="submit" :disabled="isSubmitting" class="px-12 py-4 bg-[#912d26] text-[#f4f1e1] hover:bg-[#7a241d] transition-colors duration-300 tracking-[0.4em] font-medium text-lg disabled:opacity-50 border border-[#5e1913] shadow-[4px_4px_0_#d3ccbc] active:translate-y-1 active:shadow-none">
             {{ isSubmitting ? '正在為您裝訂...' : (form.id ? '更新書卷資訊' : '建立書卷') }}
