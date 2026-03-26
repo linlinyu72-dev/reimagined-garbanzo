@@ -91,7 +91,7 @@ const openChapter = (chap) => {
 
 // === 電子書分頁邏輯 ===
 const currentPage = ref(0)
-const charsPerPage = 500
+const charsPerPage = 800
 
 const pages = computed(() => {
   if (!currentChapter.value || !currentChapter.value.content) return []
@@ -245,31 +245,43 @@ const submitComment = () => {
     </article>
 
     <!-- 閱讀模式 (Reading Book) -->
-    <article v-else-if="viewMode === 'read' && currentChapter" class="bg-[#fdfaf2] px-8 py-12 sm:px-16 sm:py-20 border-[3px] border-double border-[#d3ccbc] shadow-[15px_15px_30px_rgba(200,195,185,0.4)] relative min-h-[75vh] flex flex-col mb-16 animate-fade-in-down">
-      <div class="absolute left-4 top-4 bottom-4 w-[2px] bg-gradient-to-b from-transparent via-[#912d26]/20 to-transparent"></div>
-      <div class="absolute right-4 top-4 bottom-4 w-[2px] bg-gradient-to-b from-transparent via-[#912d26]/20 to-transparent"></div>
-
-      <header v-if="currentPage === 0" class="mb-16 text-center border-b-[2px] border-[#912d26]/20 pb-12 relative">
-        <div class="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-12 h-[2px] bg-[#912d26]"></div>
-        <div class="text-[#7a241d] tracking-widest text-sm mb-4">《 {{ selectedNovel.title }} 》</div>
-        <h1 class="text-4xl sm:text-5xl font-bold mb-6 text-[#2c2b29] tracking-[0.2em] leading-normal">{{ currentChapter.title }}</h1>
-        <div class="text-[#645e55] tracking-widest text-sm seal border border-[#a39d8f] px-2 py-1 mx-auto w-fit">本章執筆：{{ currentChapter.author || selectedNovel.author }}</div>
+    <article v-else-if="viewMode === 'read' && currentChapter" class="bg-[#f0ece1] px-4 py-8 sm:px-12 sm:py-16 border-[1px] border-[#d3ccbc] shadow-[0_20px_50px_rgba(145,45,38,0.05)] relative min-h-[85vh] flex flex-col mb-16 animate-fade-in-down rounded-sm overflow-hidden">
+      <!-- 書頁裝飾紋理 -->
+      <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(#d3ccbc 1px, transparent 1px); background-size: 20px 20px;"></div>
+      
+      <header v-if="currentPage === 0" class="mb-12 text-center relative z-10">
+        <div class="text-[#912d26] tracking-[0.3em] text-sm mb-4 font-bold">《 {{ selectedNovel.title }} 》</div>
+        <h1 class="text-4xl sm:text-5xl font-bold mb-6 text-[#2c2b29] tracking-[0.2em] leading-relaxed font-serif">{{ currentChapter.title }}</h1>
+        <div class="flex justify-center items-center gap-4">
+          <div class="h-[1px] w-12 bg-[#912d26]/30"></div>
+          <div class="text-[#645e55] tracking-widest text-sm font-serif">執筆：{{ currentChapter.author || selectedNovel.author }}</div>
+          <div class="h-[1px] w-12 bg-[#912d26]/30"></div>
+        </div>
       </header>
       
-      <div v-else class="text-center text-[#a39d8f] tracking-[0.2em] text-sm mb-12 border-b border-dashed border-[#d3ccbc] pb-4">
-        {{ selectedNovel.title }} - {{ currentChapter.title }}
+      <div v-else class="text-center text-[#912d26] opacity-70 tracking-[0.3em] font-serif text-sm mb-10 relative z-10 flex items-center justify-center gap-4">
+        <div class="h-[1px] w-8 bg-[#912d26]/30"></div>
+        {{ selectedNovel.title }} <span>·</span> {{ currentChapter.title }}
+        <div class="h-[1px] w-8 bg-[#912d26]/30"></div>
       </div>
 
-      <div class="prose prose-lg sm:prose-xl max-w-none text-justify content-area flex-1">
-        <p v-for="(paragraph, index) in pages[currentPage].split('\n')" :key="index" v-show="paragraph.trim()" class="text-[#3a3732] leading-[2.5] tracking-wide mb-8 text-lg sm:text-xl">
-          {{ paragraph }}
-        </p>
+      <div class="flex-1 w-full mx-auto relative z-10 shadow-inner bg-[#fdfaf2] border border-[#e1dac8] p-6 sm:p-10 rounded-sm">
+        <div class="w-full h-full overflow-x-auto overflow-y-hidden flex justify-end items-center custom-scrollbar" dir="rtl">
+          <div class="prose max-w-none h-[50vh] sm:h-[60vh] mx-auto min-w-max" style="writing-mode: vertical-rl;">
+            <p v-for="(paragraph, index) in pages[currentPage].split('\n')" :key="index" v-show="paragraph.trim()" class="text-[#2c2b29] leading-[2.2] tracking-[0.15em] ml-8 sm:ml-12 text-lg sm:text-2xl font-serif text-justify" style="text-indent: 2em; line-break: strict; min-height: 100%;">
+              {{ paragraph }}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div class="mt-16 pt-10 border-t border-dashed border-[#d3ccbc] flex flex-col sm:flex-row items-center justify-between gap-6">
-        <button @click="prevPage" :disabled="currentPage === 0" class="px-8 py-3 w-full sm:w-auto bg-transparent border border-[#912d26] text-[#912d26] hover:bg-[#912d26] hover:text-[#f4f1e1] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[#912d26] transition-colors tracking-[0.3em] font-medium disabled:cursor-not-allowed">⟵ 上一頁</button>
-        <span class="text-[#7e786d] text-sm tracking-widest font-bold">第 {{ currentPage + 1 }} 頁 / 共 {{ pages.length }} 頁</span>
-        <button @click="nextPage" :disabled="currentPage === pages.length - 1" class="px-8 py-3 w-full sm:w-auto bg-transparent border border-[#912d26] text-[#912d26] hover:bg-[#912d26] hover:text-[#f4f1e1] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[#912d26] transition-colors tracking-[0.3em] font-medium disabled:cursor-not-allowed">下一頁 ⟶</button>
+      <div class="mt-12 flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10 w-full max-w-3xl mx-auto">
+        <button @click="nextPage" :disabled="currentPage === pages.length - 1" class="px-8 py-3 w-full sm:w-auto bg-[#fdfaf2] border border-[#d3ccbc] text-[#912d26] hover:border-[#912d26] hover:bg-[#912d26] hover:text-[#fdfaf2] disabled:opacity-40 disabled:hover:bg-[#fdfaf2] disabled:hover:text-[#912d26] disabled:hover:border-[#d3ccbc] shadow-sm transition-all tracking-[0.2em] font-serif disabled:cursor-not-allowed">⟵ 下一頁</button>
+        <div class="flex flex-col items-center">
+          <span class="text-[#7e786d] text-sm tracking-[0.2em] font-serif">第 {{ currentPage + 1 }} 頁 / 共 {{ pages.length }} 頁</span>
+          <div class="w-full h-px mt-2 bg-gradient-to-r from-transparent via-[#d3ccbc] to-transparent"></div>
+        </div>
+        <button @click="prevPage" :disabled="currentPage === 0" class="px-8 py-3 w-full sm:w-auto bg-[#fdfaf2] border border-[#d3ccbc] text-[#912d26] hover:border-[#912d26] hover:bg-[#912d26] hover:text-[#fdfaf2] disabled:opacity-40 disabled:hover:bg-[#fdfaf2] disabled:hover:text-[#912d26] disabled:hover:border-[#d3ccbc] shadow-sm transition-all tracking-[0.2em] font-serif disabled:cursor-not-allowed">上一頁 ⟶</button>
       </div>
     </article>
     
@@ -323,4 +335,8 @@ const submitComment = () => {
 .seal { display: inline-flex; border-radius: 2px; }
 .content-area p { text-indent: 0; }
 .content-area p:not(:first-child) { text-indent: 2em; }
+.custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #d3ccbc; border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #912d26; }
 </style>
