@@ -57,50 +57,64 @@ const selectNovel = (novel) => {
       </button>
     </div>
 
-    <!-- 古風卡片 Grid -->
-    <div v-if="filteredNovels.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12">
+    <!-- 古籍書架 Grid -->
+    <div v-if="filteredNovels.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 sm:gap-10">
       <article 
         v-for="novel in filteredNovels" 
         :key="novel.id"
         @click="selectNovel(novel)"
-        class="group relative flex flex-col bg-[#fdfaf2] overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform duration-500 shadow-[2px_2px_10px_rgba(100,80,60,0.05)] hover:shadow-[4px_8px_16px_rgba(100,80,60,0.1)] border border-[#e1dac8]"
+        class="group flex flex-col items-center cursor-pointer w-full"
       >
-        <!-- 古風宣紙畫框設計 (模擬卷軸邊框) -->
-        <div class="p-2 bg-[#ece6d5] border-b border-[#e1dac8]">
-          <div class="aspect-[4/3] w-full relative overflow-hidden bg-[#3a4034] border border-[#d3ccbc]">
-            <img :src="novel.coverUrl" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 sepia-[.3] group-hover:sepia-0 transition-all duration-[1500ms]" alt="Cover" />
+        <!-- 實體書本體 (2:3 比例，傳統線裝書外觀) -->
+        <div class="relative w-full aspect-[2/3] bg-[#e4dcc7] rounded-l-sm rounded-r-lg shadow-[4px_4px_15px_rgba(0,0,0,0.1)] group-hover:shadow-[8px_15px_25px_rgba(0,0,0,0.15)] group-hover:-translate-y-2 transition-all duration-500 border border-[#d3ccbc] overflow-hidden">
+          
+          <!-- 封面圖片 (做為書皮底圖) -->
+          <img :src="novel.coverUrl" v-if="novel.coverUrl" class="absolute inset-0 w-full h-full object-cover opacity-60 sepia-[0.3] group-hover:opacity-80 transition-opacity duration-500" />
+          
+          <!-- 紋理遮罩 (讓封面具備古樸質感) -->
+          <div class="absolute inset-0 bg-gradient-to-br from-[#fdfaf2]/90 via-[#fdfaf2]/60 to-[#d3ccbc]/80 mix-blend-multiply pointer-events-none"></div>
+
+          <!-- 線裝書縫線 (右側 binding) -->
+          <div class="absolute top-0 right-0 bottom-0 w-8 sm:w-10 border-l border-[#2c2b29]/10 bg-gradient-to-l from-black/20 via-black/5 to-transparent flex flex-col justify-between items-center py-6 sm:py-8 z-10 pointer-events-none">
+            <div class="relative w-full h-full">
+              <!-- 垂直主線 -->
+              <div class="absolute right-[30%] sm:right-3 top-0 bottom-0 w-[1px] bg-[#3a4034]/40 shadow-sm"></div> 
+              <!-- 綁線點 -->
+              <div class="absolute right-[20%] sm:right-2 top-[10%] w-3 sm:w-4 h-[2px] bg-[#3a4034]/60 shadow-sm transform -rotate-2"></div>
+              <div class="absolute right-[20%] sm:right-2 top-[35%] w-3 sm:w-4 h-[2px] bg-[#3a4034]/60 shadow-sm transform -rotate-2"></div>
+              <div class="absolute right-[20%] sm:right-2 top-[60%] w-3 sm:w-4 h-[2px] bg-[#3a4034]/60 shadow-sm transform -rotate-2"></div>
+              <div class="absolute right-[20%] sm:right-2 top-[85%] w-3 sm:w-4 h-[2px] bg-[#3a4034]/60 shadow-sm transform -rotate-2"></div>
+              <!-- 書脊高光 -->
+              <div class="absolute right-0 top-0 bottom-0 w-[2px] bg-white/40 mix-blend-overlay"></div>
+            </div>
+          </div>
+
+          <!-- 書名標籤 (書簽箋) -->
+          <div class="absolute top-[8%] right-10 sm:right-14 bottom-[15%] bg-[#fdfaf2] border border-[#2c2b29]/30 w-10 sm:w-12 flex justify-center py-4 sm:py-6 shadow-md group-hover:bg-[#fffdf7] group-hover:border-[#912d26]/50 transition-colors z-20">
+            <!-- 內框線 -->
+            <div class="absolute inset-[3px] border border-[#912d26]/20 pointer-events-none"></div>
+            <h3 class="text-xl sm:text-2xl font-bold font-serif tracking-[0.3em] text-[#2c2b29] group-hover:text-[#912d26] transition-colors leading-loose" style="writing-mode: vertical-rl; max-height: 100%; overflow: hidden;">
+              {{ novel.title }}
+            </h3>
+          </div>
+
+          <!-- 作者 (左下角) -->
+          <div class="absolute bottom-6 sm:bottom-8 left-4 sm:left-6 text-[#2c2b29] flex flex-col items-center z-20">
+            <span class="text-[10px] sm:text-xs bg-[#7a241d] text-[#fdfaf2] py-1 px-0.5 border border-[#5e1913] mb-1.5 leading-none shadow-sm" style="writing-mode: vertical-rl;">撰</span>
+            <span class="text-sm sm:text-base font-serif tracking-[0.2em] font-medium" style="writing-mode: vertical-rl;">{{ novel.author }}</span>
           </div>
         </div>
 
-        <!-- 內容資訊區 -->
-        <div class="p-8 flex-1 flex flex-col relative">
-          
-          <!-- 直排書名 -->
-          <div class="absolute right-6 top-8 vertical-text text-3xl font-bold tracking-[0.3em] text-[#2c2b29] group-hover:text-[#912d26] transition-colors border-l-2 border-[#912d26]/30 pl-3 min-h-[140px] max-h-[180px] overflow-hidden">
-            {{ novel.title }}
-          </div>
-
-          <div class="pr-14 flex-1">
-             <div class="mb-5 flex gap-2 flex-wrap text-sm text-[#912d26]">
-              <span v-for="tag in novel.tags" :key="tag">
-                「{{ tag }}」
-              </span>
-            </div>
-            <p class="text-[#645e55] text-sm mb-6 line-clamp-[6] leading-[2.2] tracking-wide text-justify">
-              {{ novel.summary }}
-            </p>
-          </div>
-
-          <!-- 底部作者與連結 -->
-          <div class="flex items-end justify-between mt-auto pt-6 border-t border-dashed border-[#d3ccbc]">
-            <div class="flex items-center gap-2 text-sm text-[#7e786d]">
-               <span class="seal text-xs px-1 border border-[#912d26] text-[#912d26] rotate-[-2deg]">撰</span>
-               <span class="tracking-widest">{{ novel.author }}</span>
-            </div>
-            <span class="text-[#912d26] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-sm font-medium tracking-widest">
-              展卷 ⇾
+        <!-- 書本下方資訊 (標籤與簡介) -->
+        <div class="w-full mt-4 sm:mt-6 text-center px-1">
+          <div class="flex justify-center flex-wrap gap-1.5 mb-2 sm:mb-3">
+            <span v-for="tag in novel.tags" :key="tag" class="text-[10px] sm:text-xs text-[#912d26] border border-[#912d26]/30 px-1.5 py-0.5 bg-[#912d26]/5 rounded-sm font-serif">
+              {{ tag }}
             </span>
           </div>
+          <p class="text-[#645e55] text-xs sm:text-sm line-clamp-2 leading-[1.8] tracking-widest font-serif">
+            {{ novel.summary }}
+          </p>
         </div>
       </article>
     </div>
